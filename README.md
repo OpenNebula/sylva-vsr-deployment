@@ -17,3 +17,6 @@ The details are here: [Sylva Infrastructure Deployment Documentation](./sylva-va
 
 To deploy an example workload, specifically 6Wind Virtual Service Routers, follow the documentation here: [6Wind VSR Deployment Documentation](./vsr-deployment/README.md).
 
+## Acknowledgements
+
+Some of the software features included in this repository have been made possible through the funding of the following innovation projects: [ONEnextgen](http://onenextgen.eu/)
