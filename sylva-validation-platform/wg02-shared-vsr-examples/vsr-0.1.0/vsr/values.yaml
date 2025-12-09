@@ -1,0 +1,36 @@
+# Number of CPUs used for the pod.
+# The minimum is 2.
+cpu: 3
+# Amount of standard memory for the pod.
+# The recommended value is 2Gi.
+memory: 2Gi
+# Amount of shared memory for the pod.
+# The recommended value is 2Gi.
+shared_memory: 2Gi
+# Amount of hugepages for the pod.
+# The recommended value for reserved_size is 6Gi.
+# The possible value for page_size 2Mi or 1Gi, depending on
+# what is available on the host.
+hugepages:
+  page_size: 2Mi
+  reserved_size: 6Gi
+# The container image
+replicaCount: 1
+image:
+  repository: download.6wind.com/vsr/x86_64-ce/3.9
+  tag: 3.9.4
+  pullPolicy: IfNotPresent
+imagePullSecrets:
+  - name: regcred
+nameOverride: ""
+fullnameOverride: ""
+# List of PCI network devices to be added to the pod.
+# The name must correpond to the metadata name in the
+# NetworkAttachmentDefinition of multus configuration.
+# The resource name must correspond to the one specified in the
+# sriov plugin configuration.
+ports:
+- name: sriov
+  resource_name: intel.com/sriovpass
+- name: sriov2
+  resource_name: intel.com/sriovpass2

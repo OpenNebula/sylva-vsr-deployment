@@ -1,0 +1,131 @@
+cluster:
+  capi_providers:
+    infra_provider: capone
+    bootstrap_provider: cabpr
+
+  k8s_version: v1.31.4+rke2r1
+
+  node_classes:
+    generic:
+      kernel_cmdline: {}
+      kubelet_extra_args: {}
+      kubelet_config_file_options: {}
+      nodeTaints: {}
+      nodeLabels: {}
+      nodeAnnotations: {}
+      non_hugepages_minimum_memory_gb: 8
+      additional_commands:
+        pre_bootstrap_commands:
+          - sudo apt update && sudo apt install -y pciutils nano arping iputils-ping
+        post_bootstrap_commands:
+          - echo "KUBECONFIG=/etc/rancher/rke2/rke2.yaml" | sudo tee -a /etc/environment
+          - curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          - sudo chmod 777 /etc/rancher/rke2/rke2.yaml && sudo chmod 777 /usr/local/bin/helm
+          - sudo cp /etc/rancher/rke2/certs/ca.crt /usr/local/share/ca-certificates && sudo update-ca-certificates
+          - wget https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.deb
+          - sudo apt install ./k9s_linux_amd64.deb
+          - rm k9s_linux_amd64.deb
+    vsr:
+      kernel_cmdline:
+        hugepages:
+          enabled: true
+          hugepagesz_2M: 8192
+          hugepagesz_1G: 0
+          default_size: 2M
+      non_hugepages_minimum_memory_gb: 16
+      kubelet_extra_args:
+        allowed-unsafe-sysctls: net.*
+      kubelet_config_file_options: {}
+      nodeTaints: {}
+      nodeLabels:
+        feature.node.kubernetes.io/network-sriov.capable: "true"
+      nodeAnnotations: {}
+      additional_commands:
+        pre_bootstrap_commands:
+          - sudo apt update && sudo apt install -y pciutils nano arping iputils-ping
+          - mkdir /etc/rancher/rke2/certs
+          - mv /var/lib/rancher/rke2/agent/etc/containerd/config.toml.tmpl /var/lib/rancher/rke2/agent/etc/containerd/config.toml.tmpl.bk
+
+  capone:
+    public_network: Service
+
+    master_template: validation-capone-rke2-wkld-master
+    worker_template: validation-capone-rke2-wkld-worker-any-vf
+
+  control_plane_replicas: 3
+
+  machine_deployments:
+    md02:
+      node_class: vsr
+      replicas: 2
+
+  rke2:
+    additionalUserData:
+      config:
+        bootcmd: # fix to avoid the following grub default settings overwrite of hugepage configuration with image 'ubuntu-22-server-cloudimg' 
+          - |
+            if [ -f /etc/default/grub.d/50-cloudimg-settings.cfg ]; then
+              cloudimg_grub_cmdline=$(grep '^GRUB_CMDLINE_LINUX_DEFAULT=' /etc/default/grub.d/50-cloudimg-settings.cfg || true)
+              if [ -n "$cloudimg_grub_cmdline" ] && ! grep -q '^GRUB_CMDLINE_LINUX_DEFAULT=' /etc/default/grub; then
+                echo "$cloudimg_grub_cmdline" >> /etc/default/grub
+              fi
+              sed -i '/^GRUB_CMDLINE_LINUX_DEFAULT=/d' /etc/default/grub.d/50-cloudimg-settings.cfg
+            fi
+
+registry_mirrors:
+  default_settings:
+    capabilities: ["pull", "resolve"]
+    skip_verify: true
+  hosts_config:
+    harbor.rke2-capone-harbor.wclusters.sylva:
+    - mirror_url: https://harbor.rke2-capone-harbor.wclusters.sylva
+      is_default_mirror: true
+
+units:
+  multus:
+    enabled: true
+  # sriov-network-operator:
+  #   enabled: true
+  sriov-crd:
+    enabled: true
+  sriov-resources:
+    enabled: true
+  vsr1-namespace:
+    info:
+      description: "Privilidged namespace created for VSR deployment"
+    enabled: true
+    repo: sylva-core
+    unit_templates:
+      - base-deps
+    kustomization_spec:
+      path: ./kustomize-units/namespace-defs/privileged-namespace
+      targetNamespace: vsr1-sec-gw
+      wait: true
+  vsr2-namespace:
+    info:
+      description: "Privilidged namespace created for VSR deployment"
+    enabled: true
+    repo: sylva-core
+    unit_templates:
+      - base-deps
+    kustomization_spec:
+      path: ./kustomize-units/namespace-defs/privileged-namespace
+      targetNamespace: vsr2-sec-gw
+      wait: true
+
+sriov:
+  node_policies:
+    sriov-network-policy:
+      nodeSelector:
+        feature.node.kubernetes.io/network-sriov.capable: "true"
+      resourceName: "sriov"
+      numVfs: 1
+      deviceType: "netdevice"
+      nicSelector: # lspci -nn | grep -i ethernet
+        deviceID: "1016"
+        vendor: "15b3"
+
+# IP held in the address range of the VNET
+cluster_virtual_ip: 10.0.1.187
+# IP held in the address range of the VNET
+# display_external_ip: 10.16.3.253

@@ -1,0 +1,112 @@
+# Images to build and upload in OpenStack Glance service (adapt to the images available in the Sylva version to be installed)
+sylva_diskimagebuilder_images:
+  ubuntu-jammy-hardened-rke2-1-30-9:
+    enabled: true
+  ubuntu-jammy-plain-rke2-1-30-9:
+    enabled: true
+  ubuntu-jammy-hardened-rke2-1-29-13:
+    enabled: true
+
+# Workload cluster definition (K8s version, name, number of nodes, flavor, images, network ports, ...)
+cluster:
+  name: remote-cell-wc
+  node_classes:
+    generic:
+      kernel_cmdline: {}
+      non_hugepages_minimum_memory_gb: 8
+      kubelet_extra_args: {}
+      kubelet_config_file_options: {}
+      nodeTaints: {}
+      nodeLabels: {}
+      nodeAnnotations: {}
+      additional_commands:
+        pre_bootstrap_commands:
+          - sudo apt update && sudo apt install -y pciutils nano arping iputils-ping
+        post_bootstrap_commands:
+          - sudo mv /var/lib/rancher/rke2/bin/kubectl /usr/local/bin
+          - echo "KUBECONFIG=/etc/rancher/rke2/rke2.yaml" | sudo tee -a /etc/environment
+          - curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          - sudo chmod 777 /etc/rancher/rke2/rke2.yaml && sudo chmod 777 /usr/local/bin/kubectl && sudo chmod 777 /usr/local/bin/helm
+          - sudo cp /etc/rancher/rke2/certs/ca.crt /usr/local/share/ca-certificates && sudo update-ca-certificates
+    vsr:
+      kernel_cmdline:
+        hugepages:
+          enabled: true
+          hugepagesz_2M: 3072
+          hugepagesz_1G: 0
+          default_size: 2M
+      non_hugepages_minimum_memory_gb: 8
+      kubelet_extra_args:
+        allowed-unsafe-sysctls: net.*
+      kubelet_config_file_options: {}
+      nodeTaints: {}
+      nodeLabels:
+        feature.node.kubernetes.io/network-sriov.capable: "true"
+      nodeAnnotations: {}
+      additional_commands:
+        pre_bootstrap_commands:
+          - sudo apt update && sudo apt install -y pciutils nano arping iputils-ping
+          - mkdir /etc/rancher/rke2/certs
+          - mv /var/lib/rancher/rke2/agent/etc/containerd/config.toml.tmpl /var/lib/rancher/rke2/agent/etc/containerd/config.toml.tmpl.bk
+        # Adapt to the available PCI addresses
+        post_bootstrap_commands:
+          - echo 1 | sudo tee /sys/module/vfio/parameters/enable_unsafe_noiommu_mode
+          - echo "0000:00:06.0" | sudo tee /sys/bus/pci/drivers/iavf/unbind
+          - echo "vfio-pci" | sudo tee /sys/bus/pci/devices/0000:00:06.0/driver_override
+          - echo "0000:00:06.0" | sudo tee /sys/bus/pci/drivers/vfio-pci/bind
+  k8s_version: # Set the desired K8s version (e.g: v1.30.9+rke2r1)
+  capi_providers:
+    infra_provider: capo
+    bootstrap_provider: cabpr
+  capo:
+    image_key: # Set the desired image key (e.g: ubuntu-jammy-plain-rke2-1-30-9)
+    ssh_key_name: # Set the Key pair name
+    network_id: # Set the main network ID
+  control_plane_replicas: 1
+  control_plane:
+    capo:
+      flavor_name: # Set the desired flavour
+  machine_deployments:
+    md0:
+      replicas: 1
+      node_class: vsr
+      capo:
+        failure_domain: nova
+        flavor_name: # Set the desired flavour
+      network_interfaces:
+        sriov:
+          network:
+            id: # Set the SR-IOV network ID
+          vnicType: direct
+openstack:
+  storageClass:
+    name: "cinder-ceph-ssd"
+    type: "__DEFAULT__"
+
+# Sylva units enablement
+units:
+  longhorn:
+    enabled: true
+  multus:
+    enabled: true
+  sriov:
+    enabled: true
+  sriov-crd:
+    enabled: true
+  sriov-resources:
+    enabled: true
+
+# Sylva units configuration
+sriov:
+  node_policies:
+    sriov-network-policy:
+      nodeSelector:
+        feature.node.kubernetes.io/network-sriov.capable: "true"
+      resourceName: "sriov"
+      numVfs: 1
+      needVhostNet: true
+      deviceType: "vfio-pci"
+      # Set the deviceID and the vendor ID of the SR-IOV NIC to be used
+      nicSelector: 
+        deviceID: "154c"
+        vendor: "8086"

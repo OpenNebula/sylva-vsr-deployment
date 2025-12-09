@@ -1,0 +1,14 @@
+---
+all:
+  vars:
+    one_version: '7.0.0'
+
+frontend:
+  hosts:
+    fe: { ansible_host: 10.0.1.100 }
+
+node:
+  hosts:
+    h1: { ansible_host: 10.0.1.9 }
+    h2: { ansible_host: 10.0.1.10 }
+    h3: { ansible_host: 10.0.1.11 }

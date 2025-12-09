@@ -1,0 +1,59 @@
+﻿/ system license online serial <LICENSE PROVIDED BY WG02 TEAM>
+/ system hostname VSR2
+/ system fast-path
+/ system fast-path port <ADAPT TO YOUR PORT (E.G. pci-b0s6)>
+/ vrf main
+/ vrf main ike
+/ vrf main ike pre-shared-key secgw
+/ vrf main ike pre-shared-key secgw secret sylva0123456789
+/ vrf main ike ha
+/ vrf main ike ha listen-ha-group ha-group1
+/ vrf main ike ha local-address 192.168.1.3
+/ vrf main ike ha remote-address 192.168.1.2
+/ vrf main ike ike-policy-template ike1
+/ vrf main ike ike-policy-template ike1 ike-proposal 1
+/ vrf main ike ike-policy-template ike1 ike-proposal 1 enc-alg aes128-cbc
+/ vrf main ike ike-policy-template ike1 ike-proposal 1 auth-alg hmac-sha1
+/ vrf main ike ike-policy-template ike1 ike-proposal 1 dh-group modp1024
+/ vrf main ike ike-policy-template ike1 rekey-time 2h
+/ vrf main ike ipsec-policy-template ipsec1
+/ vrf main ike ipsec-policy-template ipsec1 esp-proposal 1
+/ vrf main ike ipsec-policy-template ipsec1 esp-proposal 1 enc-alg aes128-cbc
+/ vrf main ike ipsec-policy-template ipsec1 esp-proposal 1 auth-alg hmac-sha1
+/ vrf main ike ipsec-policy-template ipsec1 esp-proposal 1 esn true
+/ vrf main ike ipsec-policy-template ipsec1 replay-window 1024
+/ vrf main ike vpn vpn-secgw
+/ vrf main ike vpn vpn-secgw ike-policy
+/ vrf main ike vpn vpn-secgw ike-policy template ike1
+/ vrf main ike vpn vpn-secgw ipsec-policy
+/ vrf main ike vpn vpn-secgw ipsec-policy template ipsec1
+/ vrf main ike vpn vpn-secgw local-address 192.168.1.1
+/ vrf main ike vpn vpn-secgw remote-address 192.168.1.4
+/ vrf main ike vpn vpn-secgw security-policy site-to-secgw-site
+/ vrf main ike vpn vpn-secgw security-policy site-to-secgw-site local-ts subnet 2.2.2.2/32
+/ vrf main ike vpn vpn-secgw security-policy site-to-secgw-site remote-ts subnet 1.1.1.1/32
+/ vrf main ike vpn vpn-secgw security-policy site-to-secgw-site svti-id-in 10
+/ vrf main ike vpn vpn-secgw security-policy site-to-secgw-site svti-id-out 10
+/ vrf main interface
+/ vrf main interface physical eth1
+/ vrf main interface physical eth1 ipv4
+/ vrf main interface physical eth1 ipv4 address 192.168.1.3/24
+/ vrf main interface physical eth1 port <ADAPT TO YOUR PORT (E.G. pci-b0s6)>
+/ vrf main interface loopback lo0
+/ vrf main interface loopback lo0 ipv4
+/ vrf main interface loopback lo0 ipv4 address 2.2.2.2/32
+/ vrf main interface svti svti-10
+/ vrf main interface svti svti-10 svti-id 10
+/ vrf main interface vrrp vrrp_ha
+/ vrf main interface vrrp vrrp_ha version 3
+/ vrf main interface vrrp vrrp_ha link-interface eth1
+/ vrf main interface vrrp vrrp_ha vrid 1
+/ vrf main interface vrrp vrrp_ha virtual-address 192.168.1.1/24
+/ vrf main interface vrrp vrrp_ha notify-ha-group ha-group1
+/ vrf main routing
+/ vrf main routing static
+/ vrf main routing static ipv4-route 1.1.1.1/32
+/ vrf main routing static ipv4-route 1.1.1.1/32 next-hop svti-10
+/ vrf main vrrp
+/ ha
+/ ha group ha-group1

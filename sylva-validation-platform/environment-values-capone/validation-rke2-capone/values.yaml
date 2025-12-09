@@ -1,0 +1,363 @@
+---
+cluster:
+  capi_providers:
+    infra_provider: capone
+    bootstrap_provider: cabpr
+
+  capone:
+    public_network: Service
+
+    master_template: validation-capone-rke2-mgmt-master
+    worker_template: validation-capone-rke2-mgmt-worker
+
+    images:
+      - imageName: validation-capone-rke2-mgmt-node
+        imageContent: |
+          PATH = "https://d24fmfybwxpuhu.cloudfront.net/ubuntu2204-7.0.0-0-20250528.qcow2"
+          DEV_PREFIX = "vd"
+
+    templates:
+      - templateName: validation-capone-rke2-mgmt-master
+        templateContent: |
+          CONTEXT = [
+            NETWORK = "YES",
+            SET_HOSTNAME = "$NAME",
+            SSH_PUBLIC_KEY = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC9BdN15Xs2pIE6dCpwJc/42eu7eA/7uGRtespxrqiA2m09ppQiSYeUjCaIQ6A/SQGrbR6uEcc79zOkHE2K7m/1cfyz7GOS3jzTqsC+/u4eqIcS9Oz5BKGUIk1NUueK+Z0uuUQcqc+vgKZ06Ky1QcG375lsOcLs+nbP3dM6QuF5oA+rwV1iPjot/euz3thFR+a8JXjmsmtUB4o8f/z3pS1Bo2LNW9N3M8aH6LPRM/MeqdREcn1D8spTB/dH9rq6N5RxhlqU0I1lE3mkFVrAtSZFbmKEW3FuaAxBJOoZqyMtuaAyCEo7joWTG1wYbj9NJjh/L/antkPPFMNhuOMtpXJ3iULVfq84Gaoh2grHY0KSyXa+Hx78brlgWqVsK5vH5ZAuIs7CAyQYYPxWbDZb0M192LQ3JKCkopBx60Z3PsRjbIHUXTOqIWAfD/AXbCCH7j2eLEZzQoeh4lAVQTWMlT22/uH9+3c5Ao5eww4GHehq1sSr22CkcrPm3w+1ikuv1rM= root@localhost.localdomain",
+            TOKEN = "NO" ]
+          CPU = "1"
+          CPU_MODEL = [
+            MODEL = "host-passthrough" ]
+          DISK = [
+            IMAGE = "validation-capone-rke2-mgmt-node",
+            SIZE = "65536" ]
+          GRAPHICS = [
+            LISTEN = "0.0.0.0",
+            TYPE = "vnc" ]
+          HYPERVISOR = "kvm"
+          LXD_SECURITY_PRIVILEGED = "true"
+          MEMORY = "12288"
+          OS = [
+            ARCH = "x86_64",
+            FIRMWARE_SECURE = "YES" ]
+          SCHED_REQUIREMENTS = "HYPERVISOR=kvm"
+          VCPU = "8"
+      - templateName: validation-capone-rke2-mgmt-worker
+        templateContent: |
+          CONTEXT = [
+            NETWORK = "YES",
+            SET_HOSTNAME = "$NAME",
+            SSH_PUBLIC_KEY = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC9BdN15Xs2pIE6dCpwJc/42eu7eA/7uGRtespxrqiA2m09ppQiSYeUjCaIQ6A/SQGrbR6uEcc79zOkHE2K7m/1cfyz7GOS3jzTqsC+/u4eqIcS9Oz5BKGUIk1NUueK+Z0uuUQcqc+vgKZ06Ky1QcG375lsOcLs+nbP3dM6QuF5oA+rwV1iPjot/euz3thFR+a8JXjmsmtUB4o8f/z3pS1Bo2LNW9N3M8aH6LPRM/MeqdREcn1D8spTB/dH9rq6N5RxhlqU0I1lE3mkFVrAtSZFbmKEW3FuaAxBJOoZqyMtuaAyCEo7joWTG1wYbj9NJjh/L/antkPPFMNhuOMtpXJ3iULVfq84Gaoh2grHY0KSyXa+Hx78brlgWqVsK5vH5ZAuIs7CAyQYYPxWbDZb0M192LQ3JKCkopBx60Z3PsRjbIHUXTOqIWAfD/AXbCCH7j2eLEZzQoeh4lAVQTWMlT22/uH9+3c5Ao5eww4GHehq1sSr22CkcrPm3w+1ikuv1rM= root@localhost.localdomain",
+            TOKEN = "NO" ]
+          CPU = "1"
+          CPU_MODEL = [
+            MODEL = "host-passthrough" ]
+          DISK = [
+            IMAGE = "validation-capone-rke2-mgmt-node",
+            SIZE = "65536" ]
+          GRAPHICS = [
+            LISTEN = "0.0.0.0",
+            TYPE = "vnc" ]
+          HYPERVISOR = "kvm"
+          LXD_SECURITY_PRIVILEGED = "true"
+          MEMORY = "12288"
+          OS = [
+            ARCH = "x86_64",
+            FIRMWARE_SECURE = "NO" ]
+          SCHED_REQUIREMENTS = "HYPERVISOR=kvm"
+          VCPU = "4"
+
+  control_plane_replicas: 1
+
+  machine_deployments:
+    md0:
+      replicas: 2
+
+# IP held in the address range of the VNET
+cluster_virtual_ip: 10.0.1.189
+
+sylva_diskimagebuilder_images: {}
+
+proxies:
+  # put your own proxy settings here if you need
+  http_proxy: ""
+  https_proxy: ""
+  no_proxy: ""
+
+# configure containerd registry mirrors following https://github.com/containerd/containerd/blob/main/docs/hosts.md
+# see charts/syla-units/values.yaml for a more detailled example
+#registry_mirrors:
+#  hosts_config:
+#    docker.io:
+#    - mirror_url: "http://10.2.11.1:5432"
+#      registry_settings:
+#        skip_verify: true
+
+# add ntp servers if you need
+ntp:
+  enabled: false
+  servers:
+  # - 1.2.3.4
+  # - 1.2.3.5
+
+units:
+  kube-storage-version-migrator:
+    enabled: false
+
+  trivy-operator:
+    enabled: false
+
+  kubevirt:
+    enabled: false
+
+  kubevirt-test-vms:
+    enabled: false
+
+  kubevirt-manager:
+    enabled: false
+
+  kubevirt-cdi:
+    enabled: false
+
+  sylva-ca:
+    enabled: true
+
+  keycloak-resources:
+    enabled: true
+
+  kyverno:
+    enabled: true
+
+  vault:
+    enabled: true
+
+  vault-config-operator:
+    enabled: true
+
+  eso-secret-stores:
+    enabled: true
+
+  # NOTE: it does not seem to start at all
+  harbor-init:
+    enabled: true
+
+  harbor-postgres:
+    enabled: false
+
+  harbor:
+    enabled: false
+
+  neuvector-init:
+    enabled: false
+
+  neuvector:
+    enabled: false
+
+  capo:
+    enabled: false
+
+  capm3:
+    enabled: false
+
+  capv:
+    enabled: false
+
+  cabpr:
+    enabled: true
+
+  cabpoa:
+    enabled: false
+
+  openshift-assisted-installer:
+    enabled: false
+
+  metal3:
+    enabled: false
+
+  capone:
+    enabled: true
+
+  #local-path-provisioner:
+  #  enabled: true
+
+  rke2-helmchart-prevent-uninstall:
+    enabled: false
+
+  heat-operator:
+    enabled: false
+
+  capo-cloud-config:
+    enabled: false
+
+  capo-cluster-resources:
+    enabled: false
+
+  cinder-csi:
+    enabled: false
+
+  flux-webui-init:
+    enabled: false
+
+  flux-webui:
+    enabled: false
+
+  alertmanager-jiralert:
+    enabled: false
+
+  alertmanager-jiralert-config:
+    enabled: false
+
+  alertmanager-config:
+    enabled: false
+
+  kepler:
+    enabled: false
+
+  snmp-exporter:
+    enabled: false
+
+  sylva-dashboards:
+    enabled: false
+
+  multus:
+    enabled: false
+
+  multus-ready:
+    enabled: false
+
+  sriov-crd:
+    enabled: false
+
+  sriov-network-operator:
+    enabled: false
+
+  sriov:
+    enabled: false
+
+  sriov-resources:
+    enabled: false
+
+  nfs-ganesha-init:
+    enabled: false
+
+  nfs-ganesha:
+    enabled: false
+
+  test-nfs-ganesha:
+    enabled: false
+
+  ceph-csi-cephfs:
+    enabled: false
+
+  longhorn-crd:
+    enabled: true
+
+  longhorn:
+    enabled: true
+
+  longhorn-engine-image-cleanup:
+    enabled: true
+
+  longhorn-instance-manager-cleanup:
+    enabled: true
+
+  os-images-info:
+    enabled: false
+
+  os-image-server:
+    enabled: false
+
+  capo-contrail-bgpaas:
+    enabled: false
+
+  vsphere-cpi:
+    enabled: false
+
+  vsphere-csi-driver:
+    enabled: false
+
+  sandbox-privileged-namespace:
+    enabled: false
+
+  gitea-secrets:
+    enabled: false
+
+  gitea-eso:
+    enabled: false
+
+  gitea-keycloak-resources:
+    enabled: false
+
+  gitea-redis:
+    enabled: false
+
+  gitea-postgresql-ha:
+    enabled: false
+
+  gitea:
+    enabled: false
+
+  minio-operator-init:
+    enabled: false
+
+  minio-operator:
+    enabled: false
+
+  minio-logging-init:
+    enabled: false
+
+  minio-logging:
+    enabled: false
+
+  minio-monitoring-init:
+    enabled: false
+
+  minio-monitoring:
+    enabled: false
+
+  thanos-init:
+    enabled: false
+
+  thanos-credentials-secret:
+    enabled: false
+
+  thanos:
+    enabled: false
+
+  logging-crd:
+    enabled: false
+
+  logging:
+    enabled: false
+
+  logging-config:
+    enabled: false
+
+  sylva-logging-flows:
+    enabled: false
+
+  loki-init:
+    enabled: false
+
+  loki-credentials-secret:
+    enabled: false
+
+  loki:
+    enabled: false
+
+  single-replica-storageclass:
+    enabled: false
+
+  two-replicas-storageclass:
+    enabled: false
+
+  sylva-prometheus-rules:
+    enabled: false
+
+  sylva-thanos-rules:
+    enabled: false
+
+  descheduler:
+    enabled: false
+
+  workload-team-defs:
+    enabled: false

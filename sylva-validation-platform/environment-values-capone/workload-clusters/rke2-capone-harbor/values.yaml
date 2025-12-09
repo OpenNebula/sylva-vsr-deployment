@@ -1,0 +1,89 @@
+# NOTE: the harbor-init does not seem to start neither in management nor workload cluster, so this does not take effect in including this in the certificates
+external_hostnames:
+  harbor: harbor.rke2-capone-harbor.wclusters.sylva
+
+cluster:
+  capi_providers:
+    infra_provider: capone
+    bootstrap_provider: cabpr
+
+  k8s_version: v1.32.9+rke2r1
+
+  capone:
+    public_network: Service
+
+    master_template: validation-capone-rke2-harbor-opennebula-master
+    worker_template: validation-capone-rke2-harbor-opennebula-worker
+
+    images:
+      - imageName: opennebula-ubuntu2204
+        imageContent: |
+          PATH = "https://d24fmfybwxpuhu.cloudfront.net/ubuntu2204-7.0.0-0-20250528.qcow2"
+          DEV_PREFIX = "vd"
+
+    templates:
+      - templateName: validation-capone-rke2-harbor-opennebula-master
+        templateContent: |
+          CONTEXT = [
+            NETWORK = "YES",
+            SET_HOSTNAME = "$NAME",
+            SSH_PUBLIC_KEY = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC9BdN15Xs2pIE6dCpwJc/42eu7eA/7uGRtespxrqiA2m09ppQiSYeUjCaIQ6A/SQGrbR6uEcc79zOkHE2K7m/1cfyz7GOS3jzTqsC+/u4eqIcS9Oz5BKGUIk1NUueK+Z0uuUQcqc+vgKZ06Ky1QcG375lsOcLs+nbP3dM6QuF5oA+rwV1iPjot/euz3thFR+a8JXjmsmtUB4o8f/z3pS1Bo2LNW9N3M8aH6LPRM/MeqdREcn1D8spTB/dH9rq6N5RxhlqU0I1lE3mkFVrAtSZFbmKEW3FuaAxBJOoZqyMtuaAyCEo7joWTG1wYbj9NJjh/L/antkPPFMNhuOMtpXJ3iULVfq84Gaoh2grHY0KSyXa+Hx78brlgWqVsK5vH5ZAuIs7CAyQYYPxWbDZb0M192LQ3JKCkopBx60Z3PsRjbIHUXTOqIWAfD/AXbCCH7j2eLEZzQoeh4lAVQTWMlT22/uH9+3c5Ao5eww4GHehq1sSr22CkcrPm3w+1ikuv1rM= root@localhost.localdomain",
+            TOKEN = "NO" ]
+          CPU = "1"
+          CPU_MODEL = [
+            MODEL = "host-passthrough" ]
+          DISK = [
+            IMAGE = "opennebula-ubuntu2204",
+            SIZE = "65536" ]
+          GRAPHICS = [
+            LISTEN = "0.0.0.0",
+            TYPE = "vnc" ]
+          HYPERVISOR = "kvm"
+          LXD_SECURITY_PRIVILEGED = "true"
+          MEMORY = "12288"
+          OS = [
+            ARCH = "x86_64",
+            FIRMWARE_SECURE = "YES" ]
+          SCHED_REQUIREMENTS = "HYPERVISOR=kvm"
+          VCPU = "8"
+      - templateName: validation-capone-rke2-harbor-opennebula-worker
+        templateContent: |
+          CONTEXT = [
+            NETWORK = "YES",
+            SET_HOSTNAME = "$NAME",
+            SSH_PUBLIC_KEY = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC9BdN15Xs2pIE6dCpwJc/42eu7eA/7uGRtespxrqiA2m09ppQiSYeUjCaIQ6A/SQGrbR6uEcc79zOkHE2K7m/1cfyz7GOS3jzTqsC+/u4eqIcS9Oz5BKGUIk1NUueK+Z0uuUQcqc+vgKZ06Ky1QcG375lsOcLs+nbP3dM6QuF5oA+rwV1iPjot/euz3thFR+a8JXjmsmtUB4o8f/z3pS1Bo2LNW9N3M8aH6LPRM/MeqdREcn1D8spTB/dH9rq6N5RxhlqU0I1lE3mkFVrAtSZFbmKEW3FuaAxBJOoZqyMtuaAyCEo7joWTG1wYbj9NJjh/L/antkPPFMNhuOMtpXJ3iULVfq84Gaoh2grHY0KSyXa+Hx78brlgWqVsK5vH5ZAuIs7CAyQYYPxWbDZb0M192LQ3JKCkopBx60Z3PsRjbIHUXTOqIWAfD/AXbCCH7j2eLEZzQoeh4lAVQTWMlT22/uH9+3c5Ao5eww4GHehq1sSr22CkcrPm3w+1ikuv1rM= root@localhost.localdomain",
+            TOKEN = "NO" ]
+          CPU = "1"
+          CPU_MODEL = [
+            MODEL = "host-passthrough" ]
+          DISK = [
+            IMAGE = "opennebula-ubuntu2204",
+            SIZE = "65536" ]
+          GRAPHICS = [
+            LISTEN = "0.0.0.0",
+            TYPE = "vnc" ]
+          HYPERVISOR = "kvm"
+          LXD_SECURITY_PRIVILEGED = "true"
+          MEMORY = "12288"
+          OS = [
+            ARCH = "x86_64",
+            FIRMWARE_SECURE = "NO" ]
+          SCHED_REQUIREMENTS = "HYPERVISOR=kvm"
+          VCPU = "4"
+
+  control_plane_replicas: 1
+
+  machine_deployments:
+    md03:
+      replicas: 3
+
+units:
+  local-path-provisioner:
+    enabled: true
+  harbor-postgres:
+    enabled: true
+  harbor:
+    enabled: true
+
+# IP held in the address range of the VNET
+cluster_virtual_ip: 10.0.1.186
