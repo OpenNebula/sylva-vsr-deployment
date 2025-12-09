@@ -1,0 +1,24 @@
+cpu: 3
+memory: 2Gi
+shared_memory: 2Gi
+hugepages:
+  page_size: 2Mi
+  reserved_size: 6Gi
+replicaCount: 1
+image:
+  repository: harbor.rke2-capone-harbor.wclusters.sylva/library/vsr
+  tag: 3.10.1.3
+  pullPolicy: IfNotPresent
+imagePullSecrets:
+  - name: regcred
+nameOverride: ""
+fullnameOverride: ""
+ports:
+- name: sriov-vsr-nad-pt-vf     # the NAD name created by the 'SriovNetwork' or manually
+  resource_name: rancher.io/sriov
+day1Config:
+  enabled: true
+  # licenseKey: "<LICENSE PROVIDED BY WG02 TEAM>"
+  hostname: VSR1
+  fastPath:
+    port: pci-b0s6

@@ -1,0 +1,137 @@
+{{- if .Values.day1Config.enabled }}
+{{- $cfg := .Values.day1Config }}
+{{- $configMapName := default (printf "%s-day1-config" .Release.Name) $cfg.configMapName }}
+{{- $fastPath := default (dict) $cfg.fastPath }}
+{{- $preSharedKey := default (dict) $cfg.preSharedKey }}
+{{- $addresses := default (dict) $cfg.addresses }}
+{{- $haAddresses := default (dict) (index $addresses "ha") }}
+{{- $haLocal := default "" (index $haAddresses "local") }}
+{{- $haRemote := default "" (index $haAddresses "remote") }}
+{{- $vpnAddresses := default (dict) (index $addresses "vpn") }}
+{{- $vpnLocal := default "" (index $vpnAddresses "local") }}
+{{- $vpnRemote := default "" (index $vpnAddresses "remote") }}
+{{- $trafficSelectors := default (dict) (index $addresses "trafficSelectors") }}
+{{- $tsLocal := default "" (index $trafficSelectors "local") }}
+{{- $tsRemote := default "" (index $trafficSelectors "remote") }}
+{{- $interfaces := default (dict) $cfg.interfaces }}
+{{- $physicalInterface := default (dict) (index $interfaces "physical") }}
+{{- $physicalInterfaceCidr := default "" (index $physicalInterface "interfaceCidr") }}
+{{- $loopbackInterface := default (dict) (index $interfaces "loopback") }}
+{{- $loopbackCidr := default "" (index $loopbackInterface "interfaceCidr") }}
+{{- $svtiInterface := default (dict) (index $interfaces "svti") }}
+{{- $ikePolicy := default (dict) $cfg.ikePolicy }}
+{{- $ipsecPolicy := default (dict) $cfg.ipsecPolicy }}
+{{- $vpn := default (dict) $cfg.vpn }}
+{{- $routing := default (dict) $cfg.routing }}
+{{- $staticRoutes := default (list) (index $routing "staticRoutes") }}
+{{- $ha := default (dict) $cfg.ha }}
+{{- $listenGroup := default $ha.groupName $ha.listenGroup }}
+{{- $vrrp := default (dict) (index $ha "vrrp") }}
+{{- $vrrpVirtualCidr := default "" (index $vrrp "virtualCidr") }}
+{{- $vrrpNotifyGroup := default $ha.groupName $vrrp.notifyGroup }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $configMapName }}
+  labels:
+    app: vsr
+data:
+  vsr_init_config: |
+    / system license online serial {{ $cfg.licenseKey }}
+    / system hostname {{ $cfg.hostname }}
+    / system fast-path
+{{- if $fastPath.port }}
+    / system fast-path port {{ $fastPath.port }}
+{{- end }}
+    / vrf main
+    / vrf main ike
+{{- if $preSharedKey.name }}
+    / vrf main ike pre-shared-key {{ $preSharedKey.name }}
+    / vrf main ike pre-shared-key {{ $preSharedKey.name }} secret {{ $preSharedKey.secret }}
+{{- end }}
+{{- if $ha.enabled }}
+    / ha
+    / ha group {{ $ha.groupName }}
+{{- end }}
+{{- if and $ha.enabled $haLocal $haRemote }}
+    / vrf main ike ha
+    / vrf main ike ha listen-ha-group {{ $listenGroup }}
+    / vrf main ike ha local-address {{ $haLocal }}
+    / vrf main ike ha remote-address {{ $haRemote }}
+{{- end }}
+{{- if $ikePolicy.template }}
+    / vrf main ike ike-policy-template {{ $ikePolicy.template }}
+    / vrf main ike ike-policy-template {{ $ikePolicy.template }} ike-proposal {{ $ikePolicy.proposalId }}
+    / vrf main ike ike-policy-template {{ $ikePolicy.template }} ike-proposal {{ $ikePolicy.proposalId }} enc-alg {{ $ikePolicy.encryptionAlgorithm }}
+    / vrf main ike ike-policy-template {{ $ikePolicy.template }} ike-proposal {{ $ikePolicy.proposalId }} auth-alg {{ $ikePolicy.authenticationAlgorithm }}
+    / vrf main ike ike-policy-template {{ $ikePolicy.template }} ike-proposal {{ $ikePolicy.proposalId }} dh-group {{ $ikePolicy.dhGroup }}
+{{- if $ikePolicy.rekeyTime }}
+    / vrf main ike ike-policy-template {{ $ikePolicy.template }} rekey-time {{ $ikePolicy.rekeyTime }}
+{{- end }}
+{{- end }}
+{{- if $ipsecPolicy.template }}
+    / vrf main ike ipsec-policy-template {{ $ipsecPolicy.template }}
+    / vrf main ike ipsec-policy-template {{ $ipsecPolicy.template }} esp-proposal {{ $ipsecPolicy.espProposalId }}
+    / vrf main ike ipsec-policy-template {{ $ipsecPolicy.template }} esp-proposal {{ $ipsecPolicy.espProposalId }} enc-alg {{ $ipsecPolicy.encryptionAlgorithm }}
+    / vrf main ike ipsec-policy-template {{ $ipsecPolicy.template }} esp-proposal {{ $ipsecPolicy.espProposalId }} auth-alg {{ $ipsecPolicy.authenticationAlgorithm }}
+    / vrf main ike ipsec-policy-template {{ $ipsecPolicy.template }} esp-proposal {{ $ipsecPolicy.espProposalId }} esn {{ ternary "true" "false" (default false $ipsecPolicy.esn) }}
+{{- if $ipsecPolicy.startAction }}
+    / vrf main ike ipsec-policy-template {{ $ipsecPolicy.template }} start-action {{ $ipsecPolicy.startAction }}
+{{- end }}
+    / vrf main ike ipsec-policy-template {{ $ipsecPolicy.template }} replay-window {{ $ipsecPolicy.replayWindow }}
+{{- end }}
+{{- if $vpn.name }}
+    / vrf main ike vpn {{ $vpn.name }}
+    / vrf main ike vpn {{ $vpn.name }} ike-policy
+    / vrf main ike vpn {{ $vpn.name }} ike-policy template {{ $ikePolicy.template }}
+    / vrf main ike vpn {{ $vpn.name }} ipsec-policy
+    / vrf main ike vpn {{ $vpn.name }} ipsec-policy template {{ $ipsecPolicy.template }}
+    / vrf main ike vpn {{ $vpn.name }} local-address {{ $vpnLocal }}
+    / vrf main ike vpn {{ $vpn.name }} remote-address {{ $vpnRemote }}
+    / vrf main ike vpn {{ $vpn.name }} security-policy {{ $vpn.securityPolicyName }}
+    / vrf main ike vpn {{ $vpn.name }} security-policy {{ $vpn.securityPolicyName }} local-ts subnet {{ $tsLocal }}
+    / vrf main ike vpn {{ $vpn.name }} security-policy {{ $vpn.securityPolicyName }} remote-ts subnet {{ $tsRemote }}
+    / vrf main ike vpn {{ $vpn.name }} security-policy {{ $vpn.securityPolicyName }} svti-id-in {{ $vpn.svtiIdIn }}
+    / vrf main ike vpn {{ $vpn.name }} security-policy {{ $vpn.securityPolicyName }} svti-id-out {{ $vpn.svtiIdOut }}
+{{- end }}
+    / vrf main interface
+{{- if $physicalInterface.name }}
+    / vrf main interface physical {{ $physicalInterface.name }}
+    / vrf main interface physical {{ $physicalInterface.name }} ipv4
+    / vrf main interface physical {{ $physicalInterface.name }} ipv4 address {{ $physicalInterfaceCidr }}
+{{- if $physicalInterface.port }}
+    / vrf main interface physical {{ $physicalInterface.name }} port {{ $physicalInterface.port }}
+{{- end }}
+{{- end }}
+{{- if $loopbackInterface.name }}
+    / vrf main interface loopback {{ $loopbackInterface.name }}
+    / vrf main interface loopback {{ $loopbackInterface.name }} ipv4
+    / vrf main interface loopback {{ $loopbackInterface.name }} ipv4 address {{ $loopbackCidr }}
+{{- end }}
+{{- if $svtiInterface.name }}
+    / vrf main interface svti {{ $svtiInterface.name }}
+    / vrf main interface svti {{ $svtiInterface.name }} svti-id {{ $svtiInterface.id }}
+{{- end }}
+{{- if and $ha.enabled $vrrp.enabled }}
+    / vrf main interface vrrp {{ $vrrp.name }}
+{{- if $vrrp.version }}
+    / vrf main interface vrrp {{ $vrrp.name }} version {{ $vrrp.version }}
+{{- end }}
+    / vrf main interface vrrp {{ $vrrp.name }} link-interface {{ $vrrp.linkInterface }}
+    / vrf main interface vrrp {{ $vrrp.name }} vrid {{ $vrrp.vrid }}
+{{- if $vrrp.priority }}
+    / vrf main interface vrrp {{ $vrrp.name }} priority {{ $vrrp.priority }}
+{{- end }}
+    / vrf main interface vrrp {{ $vrrp.name }} virtual-address {{ $vrrpVirtualCidr }}
+    / vrf main interface vrrp {{ $vrrp.name }} notify-ha-group {{ $vrrpNotifyGroup }}
+{{- end }}
+    / vrf main routing
+    / vrf main routing static
+{{- range $staticRoutes }}
+    / vrf main routing static ipv4-route {{ .prefix }}
+    / vrf main routing static ipv4-route {{ .prefix }} next-hop {{ .nextHop }}
+{{- end }}
+{{- if and $ha.enabled $vrrp.enabled }}
+    / vrf main vrrp
+{{- end }}
+{{- end }}

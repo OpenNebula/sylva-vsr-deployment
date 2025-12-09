@@ -1,0 +1,13 @@
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: sriov-vsr-nad-pt-vf
+spec:
+  config: |
+    {
+      "cniVersion": "1.0.0",
+      "name": "sriov-vsr-nad",
+      "type": "host-device",
+      "device": "enp35s0",
+      "ipam": {}
+    }

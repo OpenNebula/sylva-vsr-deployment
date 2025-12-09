@@ -1,0 +1,123 @@
+{{- $day1Config := default (dict) .Values.day1Config }}
+{{- $day1ConfigEnabled := default false $day1Config.enabled }}
+{{- $day1ConfigMapName := default (printf "%s-day1-config" .Release.Name) $day1Config.configMapName }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: vsr
+  name: {{ .Chart.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: fastpath
+  template:
+    metadata:
+      labels:
+        app: fastpath
+      annotations:
+         k8s.v1.cni.cncf.io/networks: {{range $index, $element := .Values.ports}}{{if $index}},{{end}}{{$element.name}}{{end}}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      restartPolicy: Always
+      securityContext:
+        sysctls:
+        - name: net.ipv4.ip_local_port_range
+          value: "30000 40000"
+        - name: net.ipv4.conf.default.disable_policy
+          value: "1"
+        - name: net.ipv4.ip_forward
+          value: "1"
+        - name: net.ipv6.conf.all.forwarding
+          value: "1"
+        - name: net.netfilter.nf_conntrack_events
+          value: "1"
+      containers:
+      - image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: {{ .Chart.Name }}
+        resources:
+          limits:
+            cpu: {{ .Values.cpu | quote }}
+            memory: {{ .Values.memory | quote }}
+            hugepages-{{ .Values.hugepages.page_size }}: {{ .Values.hugepages.reserved_size }}
+{{- range .Values.ports}}
+            {{.resource_name}}: '1'
+{{- end}}
+          requests:
+            cpu: {{ .Values.cpu | quote }}
+            memory: {{ .Values.memory | quote }}
+            hugepages-{{ .Values.hugepages.page_size }}: {{ .Values.hugepages.reserved_size }}
+{{- range .Values.ports}}
+            {{.resource_name}}: '1'
+{{- end}}
+        securityContext:
+          privileged: true
+          # NOTE: these capabilities are not enough for some reason, the pod ends up in CrashLoopback error
+          # capabilities:
+          #   add:
+          #   - NET_ADMIN
+          #   - NET_RAW
+          #   - SYS_ADMIN
+          #   - SYS_NICE
+          #   - IPC_LOCK
+          #   - NET_BROADCAST
+          #   - SYSLOG
+          #   - SYS_RAWIO
+          #   - SYS_CHROOT
+          #   - AUDIT_WRITE
+          #   - SYS_PTRACE
+          #   - SYS_TIME
+        volumeMounts:
+        - mountPath: /dev/hugepages
+          name: hugepage
+        - mountPath: /dev/shm
+          name: shm
+        - mountPath: /dev/net/tun
+          name: net
+        - mountPath: /tmp
+          name: tmp
+        - mountPath: /run
+          name: run
+        - mountPath: /run/lock
+          name: run-lock
+{{- if $day1ConfigEnabled }}
+        - mountPath: /etc/init-config/config.cli
+          name: init-config
+          subPath: vsr_init_config
+{{- end }}
+      volumes:
+      - emptyDir:
+          medium: HugePages
+          sizeLimit: {{ .Values.hugepages.reserved_size }}
+        name: hugepage
+      - emptyDir:
+          medium: Memory
+          sizeLimit: {{ .Values.shared_memory | quote }}
+        name: shm
+      - hostPath:
+          path: /dev/net/tun
+          type: ""
+        name: net
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 200Mi
+        name: tmp
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 200Mi
+        name: run
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 200Mi
+        name: run-lock
+{{- if $day1ConfigEnabled }}
+      - configMap:
+          defaultMode: 256
+          name: {{ $day1ConfigMapName }}
+        name: init-config
+{{- end }}
