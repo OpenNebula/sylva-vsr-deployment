@@ -2,7 +2,6 @@
 - only sm08, sm09 and sm10 are added as hosts
 - sm10 has 4 NUMA nodes configured
 - the GRUB config has not been updated, so the hugepages won't persist
-- we will probably need more CPU to the VSRs, they are on 100% without load
 - discovered CAPONE issues:
     - https://github.com/OpenNebula/cluster-api-provider-opennebula/issues/63  
     - https://github.com/OpenNebula/engineering/issues/510
@@ -91,46 +90,6 @@ On each worker VM we have to add the DNS of the Harbor cluster, for example:
 10.0.1.186 harbor.rke2-capone-harbor.wclusters.sylva
 ```
 
-### Deploy VSR
-
-#### Worker driver prereqs
-
-On the used ootb Ubuntu, we need to follow the steps for the DPDK prerequisites on Mellanox NICs: https://doc.dpdk.org/guides-23.07/platform/mlx5.html  
-
-In total this is:
-
-```bash
-tar -xvf MLNX_OFED_LINUX-24.10-3.2.5.0-ubuntu22.04-x86_64.tgz
-cd MLNX_OFED_LINUX-24.10-3.2.5.0-ubuntu22.04-x86_64/
-sudo ./mlnxofedinstall --dpdk
-sudo /etc/init.d/openibd restart
-sudo reboot
-```
-
-#### Deployment
-
-Use this repo, follow the commands to deploy: https://github.com/balazsbme/vsr-sylva-opennebula
- (Note: a separate repository was needed, when we tried to take the more automated SRIOV config approach, in [this commit](https://github.com/OpenNebula/engineering/commit/22a588ad1c85434c0050a52f7951a5897669acbd), since then we opted for the more manual SRIOV approach which does not require the prereq creation.)
-
-#### Manual networking config
-
-Configure on the host the VF to have the correct VLAN tagged on it for that VF that is passed to the container.
-
-```
-sudo ip link set enp129s0f0np0 vf 0 vlan 2003 trust on
-```
-
-### ISSU 
-
-While traffic is running on the configured IPSec tunnel between the cell-site and sec-gw VSR deployments, we need to perform an upgrade of the sec-gw k8s cluster.
-
-After editing the `environment-values-capone/workload-clusters/rke2-capone-workload-sec-gw/values.yaml` the `k8s_version` field to the desired value, issue the usual change command:
-
-```bash
-cd sylva-core
-./apply-workload-cluster.sh ./environment-values/workload-clusters/rke2-capone-workload-sec-gw/  && ./apply.sh ./environment-values/validation-rke2-capone/ 
-```
-
 ### Port forwarding for Sylva services
 
 #### Rancher
@@ -185,14 +144,6 @@ Logs:
 ### Graceful cluster cleanup
 
 Follow the official guide: https://sylva-projects.gitlab.io/docs/1.5/runtime-operations/workload-cluster-operations/removal/ 
-
-### Harbor image load/push
-
-```bash
-docker load --input 6wind-vsr-v3.10.tar
-docker tag download.6wind.com/vsr/x86_64-ce/3.10:3.10.1.3 harbor.rke2-capone-harbor.wclusters.sylva/library/vsr:3.10.1.3
-docker push harbor.rke2-capone-harbor.wclusters.sylva/library/vsr:3.10.1.3
-```
 
 ### Demo commands
 
