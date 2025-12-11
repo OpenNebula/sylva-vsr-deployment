@@ -120,8 +120,9 @@ Install k9s:
 
 ```bash
 wget https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.deb && sudo apt install ./k9s_linux_amd64.deb && rm k9s_linux_amd64.deb
-k9s --kubeconfig /etc/rancher/rke2/rke2.yaml
 echo "export PATH=$PATH:/var/lib/rancher/rke2/bin/" >> ~/.bashrc
+source ~/.bashrc
+k9s --kubeconfig /etc/rancher/rke2/rke2.yaml
 ```
 
 ```bash

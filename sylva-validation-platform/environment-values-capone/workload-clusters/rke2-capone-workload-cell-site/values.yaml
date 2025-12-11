@@ -142,15 +142,6 @@ cluster:
               sed -i '/^GRUB_CMDLINE_LINUX_DEFAULT=/d' /etc/default/grub.d/50-cloudimg-settings.cfg
             fi
 
-registry_mirrors:
-  default_settings:
-    capabilities: ["pull", "resolve"]
-    skip_verify: true
-  hosts_config:
-    harbor.rke2-capone-harbor.wclusters.sylva:
-    - mirror_url: https://harbor.rke2-capone-harbor.wclusters.sylva
-      is_default_mirror: true
-
 units:
   multus:
     enabled: true
