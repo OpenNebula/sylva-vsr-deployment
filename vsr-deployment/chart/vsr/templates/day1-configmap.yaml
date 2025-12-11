@@ -1,6 +1,7 @@
 {{- if .Values.day1Config.enabled }}
 {{- $cfg := .Values.day1Config }}
-{{- $configMapName := default (printf "%s-day1-config" .Release.Name) $cfg.configMapName }}
+{{- $defaultConfigMapName := printf "%s-day1-config" .Release.Name }}
+{{- $configMapName := default $defaultConfigMapName $cfg.configMapName }}
 {{- $fastPath := default (dict) $cfg.fastPath }}
 {{- $preSharedKey := default (dict) $cfg.preSharedKey }}
 {{- $addresses := default (dict) $cfg.addresses }}
@@ -35,6 +36,7 @@ metadata:
   name: {{ $configMapName }}
   labels:
     app: vsr
+    release: {{ .Release.Name }}
 data:
   vsr_init_config: |
     / system license online serial {{ $cfg.licenseKey }}

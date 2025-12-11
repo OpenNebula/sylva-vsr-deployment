@@ -1,21 +1,25 @@
 {{- $day1Config := default (dict) .Values.day1Config }}
 {{- $day1ConfigEnabled := default false $day1Config.enabled }}
-{{- $day1ConfigMapName := default (printf "%s-day1-config" .Release.Name) $day1Config.configMapName }}
+{{- $defaultConfigMapName := printf "%s-day1-config" .Release.Name }}
+{{- $day1ConfigMapName := default $defaultConfigMapName $day1Config.configMapName }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     app: vsr
+    release: {{ .Release.Name }}
   name: {{ .Chart.Name }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app: fastpath
+      release: {{ .Release.Name }}
   template:
     metadata:
       labels:
         app: fastpath
+        release: {{ .Release.Name }}
       annotations:
          k8s.v1.cni.cncf.io/networks: {{range $index, $element := .Values.ports}}{{if $index}},{{end}}{{$element.name}}{{end}}
     spec:
