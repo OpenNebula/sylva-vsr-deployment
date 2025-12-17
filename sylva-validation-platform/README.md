@@ -138,9 +138,18 @@ Logs:
  - Management cluster's `capi-controller-manager`, which is the k8s community's CAPI controller
  - Management cluster's `capone-controller-manager`, which is `opennebula/cluster-api-provider-opennebula` container
 
- Resources with their statuses and conditions:
+Resources with their statuses and conditions:
  - Management cluster's `ONEMachine` and other `ONE*` 
  - Management cluster's `RKE2` config resources
+
+SRIOV resource tagging:
+ - In the workload cluster the `sriovnetworknodestates` must succeed, otherwise the resource is not tagged
+ - To reset some of the behaviour (e.g. remove outdated `sriovnetworknodestates` and restart failed ones) restart these pods: `sriov-network-config-daemon` and `sriov-sriov-network-operator` in `cattle-sriov-system` namespace.
+ - Inspect logs of the above pods for details.
+
+### VSR license troubleshooting
+
+The 6Wind VSR license used for this exercise is an evaluation license, so it has limitations (e.g. bandwidth, how many nodes can use it in parallel), and some of the activations might be cached, even after removal of pod/VM. See the official guide for troubleshooting: https://doc.6wind.com/turbo-router-3.x/user-guide/cli/system/license/check.html#user-guide-system-license-check 
 
 ### Graceful cluster cleanup
 
