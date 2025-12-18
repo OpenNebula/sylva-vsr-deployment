@@ -1,6 +1,7 @@
 # Sylva Validation Platform with OpenNebula
 
 The goal of this repo is to document the artefacts needed to build a Sylva Validation Platfrom on OpenNebula virtual infrastructure and perform a reference CNF certification.
+The official results of the validation are documented in [Sylva Validation Center](https://gitlab.com/sylva-projects/validation_center).
 
 ## Sylva Infrastructure Deployment
 

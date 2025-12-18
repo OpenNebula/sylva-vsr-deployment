@@ -1,13 +1,3 @@
-## NOTEs of status as of 19.11.2025:
-- only sm08, sm09 and sm10 are added as hosts
-- sm10 has 4 NUMA nodes configured
-- the GRUB config has not been updated, so the hugepages won't persist
-- discovered CAPONE issues:
-    - https://github.com/OpenNebula/cluster-api-provider-opennebula/issues/63  
-    - https://github.com/OpenNebula/engineering/issues/510
-    - sylva-ci has been unstable recently, and ownership is being transfered to Engineering: https://opennebula.slack.com/lists/T02B4EHUK/F07U6M9F0E8?record_id=Rec09SBT4DZ9B
-- Here all manual WAs are documented.
-
 ## Sylva VM requirements
 
 The control VM where the sylva-core is cloned and all operations are executed from. See more info for other CAPI instructions: https://sylva-projects.gitlab.io/dev-zone/ 
